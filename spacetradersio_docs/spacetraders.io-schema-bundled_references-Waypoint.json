@@ -1,0 +1,309 @@
+{
+    "description": "A waypoint is a location that ships can travel to such as a Planet, Moon or Space Station.",
+    "type": "object",
+    "properties": {
+        "symbol": {
+            "$ref": "#/definitions/WaypointSymbol"
+        },
+        "type": {
+            "$ref": "#/definitions/WaypointType"
+        },
+        "systemSymbol": {
+            "$ref": "#/definitions/SystemSymbol"
+        },
+        "x": {
+            "type": "integer",
+            "description": "Relative position of the waypoint on the system's x axis. This is not an absolute position in the universe."
+        },
+        "y": {
+            "type": "integer",
+            "description": "Relative position of the waypoint on the system's y axis. This is not an absolute position in the universe."
+        },
+        "orbitals": {
+            "type": "array",
+            "description": "Waypoints that orbit this waypoint.",
+            "items": {
+                "$ref": "#/definitions/WaypointOrbital"
+            }
+        },
+        "orbits": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The symbol of the parent waypoint, if this waypoint is in orbit around another waypoint. Otherwise this value is undefined."
+        },
+        "faction": {
+            "$ref": "#/definitions/WaypointFaction"
+        },
+        "traits": {
+            "type": "array",
+            "description": "The traits of the waypoint.",
+            "items": {
+                "$ref": "#/definitions/WaypointTrait"
+            }
+        },
+        "modifiers": {
+            "type": "array",
+            "description": "The modifiers of the waypoint.",
+            "items": {
+                "$ref": "#/definitions/WaypointModifier"
+            }
+        },
+        "chart": {
+            "$ref": "#/definitions/Chart"
+        },
+        "isUnderConstruction": {
+            "type": "boolean",
+            "description": "True if the waypoint is under construction."
+        }
+    },
+    "required": [
+        "symbol",
+        "type",
+        "systemSymbol",
+        "x",
+        "y",
+        "orbitals",
+        "traits",
+        "isUnderConstruction"
+    ],
+    "definitions": {
+        "Chart": {
+            "type": "object",
+            "description": "The chart of a system or waypoint, which makes the location visible to other agents.",
+            "properties": {
+                "waypointSymbol": {
+                    "$ref": "#/definitions/WaypointSymbol"
+                },
+                "submittedBy": {
+                    "type": "string",
+                    "description": "The agent that submitted the chart for this waypoint."
+                },
+                "submittedOn": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The time the chart for this waypoint was submitted."
+                }
+            }
+        },
+        "FactionSymbol": {
+            "type": "string",
+            "description": "The symbol of the faction.",
+            "minLength": 1,
+            "enum": [
+                "COSMIC",
+                "VOID",
+                "GALACTIC",
+                "QUANTUM",
+                "DOMINION",
+                "ASTRO",
+                "CORSAIRS",
+                "OBSIDIAN",
+                "AEGIS",
+                "UNITED",
+                "SOLITARY",
+                "COBALT",
+                "OMEGA",
+                "ECHO",
+                "LORDS",
+                "CULT",
+                "ANCIENTS",
+                "SHADOW",
+                "ETHEREAL"
+            ]
+        },
+        "SystemSymbol": {
+            "type": "string",
+            "description": "The symbol of the system.",
+            "minLength": 1,
+            "x-faker": {
+                "fake": [
+                    "X1-{{random.alphaNumeric(5)}}"
+                ]
+            }
+        },
+        "WaypointFaction": {
+            "type": "object",
+            "description": "The faction that controls the waypoint.",
+            "properties": {
+                "symbol": {
+                    "$ref": "#/definitions/FactionSymbol"
+                }
+            },
+            "required": [
+                "symbol"
+            ]
+        },
+        "WaypointModifier": {
+            "type": "object",
+            "properties": {
+                "symbol": {
+                    "$ref": "#/definitions/WaypointModifierSymbol"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the trait."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "A description of the trait."
+                }
+            },
+            "required": [
+                "symbol",
+                "name",
+                "description"
+            ]
+        },
+        "WaypointModifierSymbol": {
+            "type": "string",
+            "description": "The unique identifier of the modifier.",
+            "enum": [
+                "STRIPPED",
+                "UNSTABLE",
+                "RADIATION_LEAK",
+                "CRITICAL_LIMIT",
+                "CIVIL_UNREST"
+            ]
+        },
+        "WaypointOrbital": {
+            "type": "object",
+            "description": "An orbital is another waypoint that orbits a parent waypoint.",
+            "properties": {
+                "symbol": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The symbol of the orbiting waypoint."
+                }
+            },
+            "required": [
+                "symbol"
+            ]
+        },
+        "WaypointSymbol": {
+            "type": "string",
+            "description": "The symbol of the waypoint.",
+            "minLength": 1,
+            "x-faker": {
+                "fake": [
+                    "X1-{{random.alphaNumeric(5)}}-{{random.alphaNumeric(5)}}"
+                ]
+            }
+        },
+        "WaypointTrait": {
+            "type": "object",
+            "properties": {
+                "symbol": {
+                    "$ref": "#/definitions/WaypointTraitSymbol"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The name of the trait."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "A description of the trait."
+                }
+            },
+            "required": [
+                "symbol",
+                "name",
+                "description"
+            ]
+        },
+        "WaypointTraitSymbol": {
+            "type": "string",
+            "description": "The unique identifier of the trait.",
+            "enum": [
+                "UNCHARTED",
+                "UNDER_CONSTRUCTION",
+                "MARKETPLACE",
+                "SHIPYARD",
+                "OUTPOST",
+                "SCATTERED_SETTLEMENTS",
+                "SPRAWLING_CITIES",
+                "MEGA_STRUCTURES",
+                "PIRATE_BASE",
+                "OVERCROWDED",
+                "HIGH_TECH",
+                "CORRUPT",
+                "BUREAUCRATIC",
+                "TRADING_HUB",
+                "INDUSTRIAL",
+                "BLACK_MARKET",
+                "RESEARCH_FACILITY",
+                "MILITARY_BASE",
+                "SURVEILLANCE_OUTPOST",
+                "EXPLORATION_OUTPOST",
+                "MINERAL_DEPOSITS",
+                "COMMON_METAL_DEPOSITS",
+                "PRECIOUS_METAL_DEPOSITS",
+                "RARE_METAL_DEPOSITS",
+                "METHANE_POOLS",
+                "ICE_CRYSTALS",
+                "EXPLOSIVE_GASES",
+                "STRONG_MAGNETOSPHERE",
+                "VIBRANT_AURORAS",
+                "SALT_FLATS",
+                "CANYONS",
+                "PERPETUAL_DAYLIGHT",
+                "PERPETUAL_OVERCAST",
+                "DRY_SEABEDS",
+                "MAGMA_SEAS",
+                "SUPERVOLCANOES",
+                "ASH_CLOUDS",
+                "VAST_RUINS",
+                "MUTATED_FLORA",
+                "TERRAFORMED",
+                "EXTREME_TEMPERATURES",
+                "EXTREME_PRESSURE",
+                "DIVERSE_LIFE",
+                "SCARCE_LIFE",
+                "FOSSILS",
+                "WEAK_GRAVITY",
+                "STRONG_GRAVITY",
+                "CRUSHING_GRAVITY",
+                "TOXIC_ATMOSPHERE",
+                "CORROSIVE_ATMOSPHERE",
+                "BREATHABLE_ATMOSPHERE",
+                "THIN_ATMOSPHERE",
+                "JOVIAN",
+                "ROCKY",
+                "VOLCANIC",
+                "FROZEN",
+                "SWAMP",
+                "BARREN",
+                "TEMPERATE",
+                "JUNGLE",
+                "OCEAN",
+                "RADIOACTIVE",
+                "MICRO_GRAVITY_ANOMALIES",
+                "DEBRIS_CLUSTER",
+                "DEEP_CRATERS",
+                "SHALLOW_CRATERS",
+                "UNSTABLE_COMPOSITION",
+                "HOLLOWED_INTERIOR",
+                "STRIPPED"
+            ]
+        },
+        "WaypointType": {
+            "type": "string",
+            "description": "The type of waypoint.",
+            "enum": [
+                "PLANET",
+                "GAS_GIANT",
+                "MOON",
+                "ORBITAL_STATION",
+                "JUMP_GATE",
+                "ASTEROID_FIELD",
+                "ASTEROID",
+                "ENGINEERED_ASTEROID",
+                "ASTEROID_BASE",
+                "NEBULA",
+                "DEBRIS_FIELD",
+                "GRAVITY_WELL",
+                "ARTIFICIAL_GRAVITY_WELL",
+                "FUEL_STATION"
+            ]
+        }
+    }
+}
