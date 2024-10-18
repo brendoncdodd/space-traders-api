@@ -48,11 +48,20 @@ func (self *Vector2) Distance(other Vector2) float64 {
 	return math.Sqrt(float64(d.x ^ 2 + d.y ^ 2))
 }
 
+type Agent struct {
+	AccountID       string //`json:"accountID"`
+	Credits         int    //`json:"credits"`
+	Headquarters    string //`json:"headquarters"`
+	ShipCount       int    //`json:"shipCount"`
+	StartingFaction string //`json:"startingFaction"`
+	Symbol          string //`json:"symbol"`
+}
+
 func init() {
 	var err error
 
 	if URL_base == nil {
-		URL_base, err = url.Parse("https://api.spacetraders.io/v2")
+		URL_base, err = url.Parse("https://api.spacetraders.io")
 	}
 
 	if err != nil {
@@ -119,7 +128,7 @@ func LoadToken(token string) (err error) {
 // Give this some JSON that follows the pattern:
 // { "data": { "token": [TOKEN] } }
 // Trailing null bytes cause errors.
-//TODO: Fix the trailing bytes thing.
+// TODO: Fix the trailing bytes thing.
 func DecodeToken(JSONdata []byte) ([]byte, error) {
 	var jsonMap map[string]any
 	error_prefix := "STAPI: While trying to decode JSON and get token."
@@ -213,14 +222,15 @@ func CreateAgent(agent string, faction string) (string, error) {
 //
 //	Give it an http.Request with the GET method and "Authorization: Bearer [token] header already added.
 //	or nil to use token_GET
-func GetAgentDetails(requestTemplate *http.Request) (string, string, error) {
+func GetAgentDetails(requestTemplate *http.Request) (Agent, string, error) {
 	const BUFFER_SIZE = 10000
 	error_prefix := "STAPI: Trying to get agent details."
 	responseBody := make([]byte, BUFFER_SIZE)
+	var JSONobject map[string]*Agent
 
 	if requestTemplate == nil {
 		if token_GET == nil {
-			return "", "", fmt.Errorf(
+			return Agent{}, "", fmt.Errorf(
 				"%s token_GET is nil",
 				error_prefix,
 			)
@@ -235,7 +245,7 @@ func GetAgentDetails(requestTemplate *http.Request) (string, string, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", resp.Status, fmt.Errorf(
+		return Agent{}, resp.Status, fmt.Errorf(
 			"%s Trying to send GET request: %s %w",
 			req.URL.String(),
 			error_prefix,
@@ -247,21 +257,30 @@ func GetAgentDetails(requestTemplate *http.Request) (string, string, error) {
 	bodySize, err := resp.Body.Read(responseBody)
 	responseBody = bytes.TrimRight(responseBody, "\x00")
 	if err != nil {
-		return string(responseBody), resp.Status, fmt.Errorf(
+		return Agent{}, resp.Status, fmt.Errorf(
 			"%s Trying to read response body. %w",
 			error_prefix,
 			err,
 		)
 	}
 	if bodySize >= BUFFER_SIZE {
-		return string(responseBody), resp.Status, fmt.Errorf(
+		return Agent{}, resp.Status, fmt.Errorf(
 			"%s Response body too big for buffer (%d bytes).",
 			error_prefix,
 			BUFFER_SIZE,
 		)
 	}
 
-	return string(responseBody), resp.Status, err
+	err = json.Unmarshal(responseBody, &JSONobject)
+	if err != nil {
+		return Agent{}, resp.Status, fmt.Errorf(
+			"%s Unmarshalling JSON. %w",
+			error_prefix,
+			err,
+		)
+	}
+
+	return *JSONobject["data"], resp.Status, err
 }
 
 // Not implemented yet
