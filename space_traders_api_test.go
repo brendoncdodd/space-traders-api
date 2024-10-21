@@ -1,6 +1,7 @@
 package space_traders_api
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -118,11 +119,15 @@ func TestGetContracts(t *testing.T) {
 	defer req.Body.Close()
 
 	if contracts, err = GetContracts(req); err != nil {
-		t.Fatalf(
-			"%s Error from GetContracts() %s",
-			errPrefix,
-			err.Error(),
-		)
+		if errors.Is(err, NoContentError) {
+			err = nil
+		} else {
+			t.Fatalf(
+				"%s Error from GetContracts() %s",
+				errPrefix,
+				err.Error(),
+			)
+		}
 	}
 
 	if contracts == nil {

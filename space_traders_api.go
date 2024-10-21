@@ -108,6 +108,8 @@ type Agent struct {
 	Symbol          string //`json:"symbol"`
 }
 
+var NoContentError = fmt.Errorf("No content from server.")
+
 func (self Agent) String() string {
 	return fmt.Sprintf(
 		"Agent %s\n"+
@@ -430,11 +432,16 @@ func GetContracts(requestTemplate *http.Request) ([]Contract, error) {
 			lastPage = true
 		}
 
-		if page.Meta["total"] == 0 {
-			contracts = append(contracts, Contract{ID: "0"})
-		}
-
 		contracts = append(contracts, page.Data...)
+	}
+
+	if contracts == nil {
+		contracts = []Contract{{ID: "0"}}
+		return contracts, fmt.Errorf(
+			"%s %w No contracts.",
+			error_prefix,
+			NoContentError,
+		)
 	}
 
 	return contracts, nil
