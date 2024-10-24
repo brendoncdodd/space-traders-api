@@ -21,6 +21,51 @@ var (
 	token_POST *http.Request
 )
 
+type SaveData struct {
+	Token    string
+	Agent    Agent
+	Contract Contract
+	Faction  any
+	Ship     any
+}
+
+func LoadSaveData(filename string) (data *SaveData, err error) {
+	const errPrefix = "Loading save data."
+	var saveFile *os.File
+
+	saveFile, e := os.Open(filename)
+	if e != nil {
+		return nil, fmt.Errorf(
+			"%s Opening save file %s %w",
+			errPrefix,
+			filename,
+			e,
+		)
+	}
+
+	fileData, e := io.ReadAll(saveFile)
+	if e != nil {
+		return nil, fmt.Errorf(
+			"%s Reading data from save file %s %w",
+			errPrefix,
+			filename,
+			e,
+		)
+	}
+
+	e = json.Unmarshal(fileData, data)
+	if e != nil {
+		return data, fmt.Errorf(
+			"%s Decoding JSON from %s %w",
+			errPrefix,
+			filename,
+			e,
+		)
+	}
+
+	return
+}
+
 type ContractPage struct {
 	Data []Contract
 	Meta map[string]int
@@ -69,14 +114,6 @@ func (self Contract) String() string {
 		self.Expiration,
 		self.DeadlineToAccept,
 	)
-}
-
-type Ship struct {
-	symbol string
-	nav    struct {
-		systemSymbol   string
-		waypointSymbol string
-	}
 }
 
 type Vector2 struct {
