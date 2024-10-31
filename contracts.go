@@ -10,6 +10,57 @@ import (
 	"encoding/json"
 )
 
+type ContractPage struct {
+	Data []Contract
+	Meta map[string]int
+}
+
+type Contract struct {
+	ID            string
+	FactionSymbol string
+	Type          string
+	Terms         struct {
+		Deadline string
+		Payment  struct {
+			OnAccepted  int
+			OnFulfilled int
+		}
+		Deliver []struct {
+			TradeSymbol       string
+			DestinationSymbol string
+			UnitsRequired     int
+			UnitsFulfilled    int
+		}
+	}
+	Accepted         bool
+	Fulfilled        bool
+	Expiration       string
+	DeadlineToAccept string
+}
+
+func (self Contract) String() string {
+	return fmt.Sprintf(
+		"\nContract\n"+
+			"\tID\t%s\n\tFaction\t%s\n\tType\t%s\n\tTerms\n"+
+			"\t\tDeadline\t%s\n\t\tPayment\n"+
+			"\t\t\tonAccepted\t%d\n\t\t\tonFulfilled\t%d\n"+
+			"\t\tDeliver\t%v\n"+
+			"\tAccepted\t%t\n\tFulfilled\t%t\n\tExpiration\t%s\n\tDeadlineToAccept\t%s\n",
+		self.ID,
+		self.FactionSymbol,
+		self.Type,
+		self.Terms.Deadline,
+		self.Terms.Payment.OnAccepted,
+		self.Terms.Payment.OnFulfilled,
+		self.Terms.Deliver,
+		self.Accepted,
+		self.Fulfilled,
+		self.Expiration,
+		self.DeadlineToAccept,
+	)
+}
+
+
 func GetContracts(requestTemplate *http.Request) ([]Contract, error) {
 	const BUFFER_SIZE = 10000
 	error_prefix := "STAPI: Trying to get contracts."

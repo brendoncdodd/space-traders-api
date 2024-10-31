@@ -12,6 +12,7 @@ import (
 )
 
 var new_save SaveData
+var test_user_first_ship_symbol string
 
 const TEST_USER_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoiVEVTVF9VU0VSIiwidmVyc2lvbiI6InYyLjIuMCIsInJlc2V0X2RhdGUiOiIyMDI0LTEwLTI3IiwiaWF0IjoxNzMwMjk1Mzc2LCJzdWIiOiJhZ2VudC10b2tlbiJ9.G_gv8evLdVdAbcNpryY5lyc8TjdMhMuHm14LA7_7nHsiVJzxO9lEfIXcemAy0fHv2Yqw-kF5zNevMBqw0aCUXADhdBwq2mhPPVhGoZ_TGTy5AycIvjnhXH5kVSyhgYB1HlDYV5REn3IkNCTSbE1SEjiVLKRmH5GAvh0L4kv4cu41re015fiwD_zt89_K85FQ_2Q0WlkWUgmA6js9wEp4D8M9omYY7TsS0r5pi5_pyORVca5hDt9lKtj5LqtbRDJ-oToyDoKT5Almu_ilEzc0Ajz1j3Th9_EvguH6R8GAb53qK6Tx7a4Q6qMd0LjbrB1O0ZswyXd51kWplR3sr1R4DQ"
 
@@ -120,7 +121,7 @@ func TestGetAgentDetails(t *testing.T) {
 	timerGetAgentDetails()
 
 	if result.Symbol != "TEST_USER" ||
-		result.AccountID != TEST_USER_ACCOUNT_ID{
+		result.AccountID != TEST_USER_ACCOUNT_ID {
 		t.Fatalf(
 			"%s Result of first call is not TEST_USER. User is %s\naccountID is %s",
 			errPrefix,
@@ -148,7 +149,7 @@ func TestGetAgentDetails(t *testing.T) {
 	timerGetAgentDetails()
 
 	if result.Symbol != "TEST_USER" ||
-		result.AccountID != TEST_USER_ACCOUNT_ID{
+		result.AccountID != TEST_USER_ACCOUNT_ID {
 		t.Fatalf(
 			"%s Result of second call is not TEST_USER. User is %s\naccountID is %s",
 			errPrefix,
@@ -156,6 +157,58 @@ func TestGetAgentDetails(t *testing.T) {
 			result.AccountID,
 		)
 	}
+}
+
+func TestGetShipsByAgent(t *testing.T) {
+	errPrefix := "TEST_GetShipsByAgent:"
+
+	timerGetShipsByAgent := timer("GetShipsByAgent(TEST_USER_TOKEN)")
+	ships, err := GetShipsByAgent(TEST_USER_TOKEN)
+	timerGetShipsByAgent()
+	if err != nil {
+		t.Fatalf(
+			"%s Error from GetShipsByAgent(),\n%s",
+			errPrefix,
+			err.Error(),
+		)
+	}
+
+	if len(ships) == 0 || ships[0].Symbol == "" {
+		t.Fatalf(
+			"%s Got no ships.",
+			errPrefix,
+		)
+	}
+
+	for _,ship := range ships {
+		fmt.Printf("%v\n", &ship)
+	}
+
+	test_user_first_ship_symbol = ships[0].Symbol
+}
+
+func TestGetShip(t *testing.T) {
+	errPrefix := "TEST_GetShip():"
+
+	if test_user_first_ship_symbol == "" {
+		t.Skipf(
+			"%s There is no ship symbol. See TestGetShipsByAgent(). Skipping.",
+			errPrefix,
+		)
+	}
+
+	timerGetShip := timer("GetShip(test_user_first_ship_symbol, TEST_USER_TOKEN")
+	ship, err := GetShip(test_user_first_ship_symbol, TEST_USER_TOKEN)
+	timerGetShip()
+	if err != nil {
+		t.Fatalf(
+			"%s Getting ship.\n%s",
+			errPrefix,
+			err.Error(),
+		)
+	}
+
+	fmt.Printf("%v\n", ship)
 }
 
 func TestGetSystemWaypoints(t *testing.T) {

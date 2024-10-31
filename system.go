@@ -68,7 +68,7 @@ func GetSystemWaypoints(
 	traits []string,
 	waypointType string,
 ) (ret []Waypoint, err error) {
-	var pageWaypoints struct {
+	var pageWaypoints *struct {
 		data []Waypoint
 		meta map[string]int
 	}

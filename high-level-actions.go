@@ -22,7 +22,7 @@ func FindNearestWaypointWithTraits(
 
 	shipLocation, err := GetShipLocation(shipSymbol, token)
 	if err != nil {
-		fmt.Errorf(
+		return "", fmt.Errorf(
 			"%s Getting ship location.%w",
 			errPrefix,
 			err,

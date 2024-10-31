@@ -11,6 +11,33 @@ import (
 	"strings"
 )
 
+type Agent struct {
+	AccountID       string //`json:"accountID"`
+	Credits         int    //`json:"credits"`
+	Headquarters    string //`json:"headquarters"`
+	ShipCount       int    //`json:"shipCount"`
+	StartingFaction string //`json:"startingFaction"`
+	Symbol          string //`json:"symbol"`
+}
+
+func (self Agent) String() string {
+	return fmt.Sprintf(
+		"Agent %s\n"+
+			"\tAccount ID:\t%s\n"+
+			"\tCredits:\t%d\n"+
+			"\tHeadquarters\t%s\n"+
+			"\tShip Count:\t%d\n"+
+			"\t(Starting) Faction:\t%s\n",
+		self.Symbol,
+		self.AccountID,
+		self.Credits,
+		self.Headquarters,
+		self.ShipCount,
+		self.StartingFaction,
+	)
+}
+
+
 // Creates a spacetraders.io agent.
 // Writes the (JSON) response body to a file: savefiles/[agent].json
 // Returns the entire response body (including the token)
