@@ -21,7 +21,7 @@ func (self *Vector2) Distance(other Vector2) float64 {
 		d.y *= -1
 	}
 
-	return math.Sqrt(float64(d.x ^ 2 + d.y ^ 2))
+	return math.Sqrt(float64(d.x * d.x  + d.y * d.y))
 }
 
 // TODO: Implement

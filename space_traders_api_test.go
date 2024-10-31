@@ -38,6 +38,29 @@ func describe(i interface{}) string {
 	return fmt.Sprintf("(%v, %T)", i, i)
 }
 
+func TestVector2(t *testing.T) {
+	errPrefix := "TEST_Vector2:"
+
+	a := Vector2{3, 0}
+	b := Vector2{0, 4}
+	want := 5.0
+
+	timerDistance := timer("Vector2.Distance()")
+	res := a.Distance(b)
+	timerDistance()
+
+	if res != want {
+		t.Fatalf(
+			"%s Bad distance\ta:%v b:%v d:%f want:%f",
+			errPrefix,
+			a,
+			b,
+			res,
+			want,
+		)
+	}
+}
+
 func TestCreateAgent(t *testing.T) {
 	var err error
 	errPrefix := "TEST_CreateAgent:"
@@ -180,7 +203,7 @@ func TestGetShipsByAgent(t *testing.T) {
 		)
 	}
 
-	for _,ship := range ships {
+	for _, ship := range ships {
 		fmt.Printf("%v\n", &ship)
 	}
 
