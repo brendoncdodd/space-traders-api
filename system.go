@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const MAX_PAGE_LIMIT = "20"
+const MAX_PAGE_LIMIT = 20
 
 type WaypointTrait struct {
 	Symbol      string
@@ -35,7 +35,7 @@ type Waypoint struct {
 	SystemSymbol        string
 	X                   int
 	Y                   int
-	Orbitals            *struct{ symbol string }
+	Orbitals            []struct{ symbol string }
 	Orbits              string
 	Faction             *struct{ symbol string }
 	Traits              []WaypointTrait
@@ -93,7 +93,7 @@ func GetSystemWaypoints(
 	defer req.Body.Close()
 
 	q := req.URL.Query()
-	q.Add("limit", MAX_PAGE_LIMIT)
+	q.Add("limit", strconv.Itoa(MAX_PAGE_LIMIT))
 
 	if traits != nil && len(traits) > 0 {
 		for _, trait := range traits {
@@ -118,7 +118,6 @@ func GetSystemWaypoints(
 	}
 	req.Body.Close()
 	req.Body = io.NopCloser(strings.NewReader(""))
-	defer req.Body.Close()
 
 	err = json.Unmarshal(buf, &pageWaypoints)
 	if err != nil {
@@ -161,18 +160,25 @@ func GetSystemWaypoints(
 			)
 		}
 
+		req.Body.Close()
+		req.Body = io.NopCloser(strings.NewReader(""))
+
 		ret = append(ret, pageWaypoints.data...)
 	}
+	defer req.Body.Close()
 
 	return
 }
 
 // https://api.spacetraders.io/v2/systems/{systemSymbol}/waypoints/{waypointSymbol}
-func GetWaypointLocation(waypointSymbol string) (Vector2, error) {
-	var waypoint *Waypoint
-	errPrefix := "Getting waypoint location."
+func GetWaypoint(waypointSymbol string) (*Waypoint, error) {
+	errPrefix := "Getting waypoint."
+	respObject := new(struct {
+		Data  *Waypoint
+		Error *STJsonError
+	})
 	systemSymbol :=
-		strings.Split(waypointSymbol, "-")[0] +
+		strings.Split(waypointSymbol, "-")[0] + "-" +
 			strings.Split(waypointSymbol, "-")[1]
 
 	req, err := http.NewRequest(
@@ -184,7 +190,7 @@ func GetWaypointLocation(waypointSymbol string) (Vector2, error) {
 		io.NopCloser(strings.NewReader("")),
 	)
 	if err != nil {
-		return Vector2{}, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"%s Creating request. %w",
 			errPrefix,
 			err,
@@ -193,17 +199,40 @@ func GetWaypointLocation(waypointSymbol string) (Vector2, error) {
 
 	buf, err := SendRequest(req)
 	if err != nil {
-		return Vector2{}, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"%s Sending request.%w",
 			errPrefix,
 			err,
 		)
 	}
 
-	err = json.Unmarshal(buf, waypoint)
+	err = json.Unmarshal(buf, respObject)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%s Unmarshaling response.%w",
+			errPrefix,
+			err,
+		)
+	}
+	if respObject.Error != nil {
+		return respObject.Data, fmt.Errorf(
+			"%s spacetraders.io error. %w",
+			errPrefix,
+			respObject.Error,
+		)
+	}
+
+	return respObject.Data, nil
+}
+
+// https://api.spacetraders.io/v2/systems/{systemSymbol}/waypoints/{waypointSymbol}
+func GetWaypointLocation(waypointSymbol string) (Vector2, error) {
+	errPrefix := "Getting waypoint location."
+
+	waypoint, err := GetWaypoint(waypointSymbol)
 	if err != nil {
 		return Vector2{}, fmt.Errorf(
-			"%s Unmarshaling response.%w",
+			"%s Getting waypoint.\n%w",
 			errPrefix,
 			err,
 		)

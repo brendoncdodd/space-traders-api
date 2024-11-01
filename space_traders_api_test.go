@@ -234,14 +234,63 @@ func TestGetShip(t *testing.T) {
 	fmt.Printf("%v\n", ship)
 }
 
+func TestGetShipNav(t *testing.T) {
+	errPrefix := "TEST_GetShipNav():"
+
+	if test_user_first_ship_symbol == "" {
+		t.Skipf(
+			"%s There is no ship symbol. See TestGetShipsByAgent(). Skipping.",
+			errPrefix,
+		)
+	}
+
+	timerGetShipNav := timer("GetShipNav()")
+	shipNav, err := GetShipNav(test_user_first_ship_symbol, TEST_USER_TOKEN)
+	timerGetShipNav()
+	if err != nil {
+		t.Fatalf(
+			"%s Getting ship nav.\n%s",
+			errPrefix,
+			err.Error(),
+		)
+	}
+
+	if shipNav == nil || shipNav.WaypointSymbol == "" {
+		t.Fatalf(
+			"%s Bad data.\n%s",
+			errPrefix,
+			err.Error(),
+		)
+	}
+
+	timerGetShipLocation := timer("GetShipLocation()")
+	shipLocation, err := GetShipLocation(test_user_first_ship_symbol, TEST_USER_TOKEN)
+	timerGetShipLocation()
+	if err != nil {
+		t.Fatalf(
+			"%s Getting ship location.\n%s",
+			errPrefix,
+			err.Error(),
+		)
+	}
+
+	if shipLocation == (Vector2{}) {
+		t.Fatalf(
+			"%s Bad data.\n%s",
+			errPrefix,
+			err.Error(),
+		)
+	}
+}
+
 func TestGetSystemWaypoints(t *testing.T) {
 	errPrefix := "TEST_GetSystemWaypoints():"
 	var waypoints []Waypoint
 	var err error
 
 	timerGetAllWaypointsInSystem := timer("GetAllWaypointsInSystem(\"X1-UQ22\")")
-
 	waypoints, err = GetAllWaypointsInSystem("X1-UQ22")
+	timerGetAllWaypointsInSystem()
 	if err != nil {
 		t.Fatalf(
 			"%s Getting all waypoints in system. %s",
@@ -249,8 +298,6 @@ func TestGetSystemWaypoints(t *testing.T) {
 			err.Error(),
 		)
 	}
-
-	timerGetAllWaypointsInSystem()
 
 	for idx, waypoint := range waypoints {
 		if waypoint.Symbol == (Waypoint{}.Symbol) {
@@ -263,8 +310,8 @@ func TestGetSystemWaypoints(t *testing.T) {
 	}
 
 	timerGetSystemWaypoints := timer("GetSystemWaypoints(\"X1-UQ22\", []string{\"STRIPPED\"}, \"ASTEROID\")")
-
 	waypoints, err = GetSystemWaypoints("X1-UQ22", []string{"STRIPPED"}, "ASTEROID")
+	timerGetSystemWaypoints()
 	if err != nil {
 		t.Fatalf(
 			"%s Getting all STRIPPED ASTEROIDs in system. %s",
@@ -272,8 +319,6 @@ func TestGetSystemWaypoints(t *testing.T) {
 			err.Error(),
 		)
 	}
-
-	timerGetSystemWaypoints()
 
 	for idx, waypoint := range waypoints {
 		if waypoint.Symbol == (Waypoint{}.Symbol) {
@@ -308,41 +353,48 @@ func TestGetSystemWaypoints(t *testing.T) {
 	}
 }
 
-func TestGetContracts(t *testing.T) {
-	errPrefix := "TEST_GetContracts():"
+func TestGetMyContracts(t *testing.T) {
+	errPrefix := "TEST_GetMyContracts():"
 	var contracts []Contract
 	var err error
 
-	req, err := generateTestUserTemplate("GET")
+	timerGetContracts := timer("GetMyContracts()")
+	contracts, err = GetMyContracts(TEST_USER_TOKEN)
+	timerGetContracts()
 	if err != nil {
-		t.Fatalf(
-			"%s Error creating template request. %s",
-			errPrefix,
-			err.Error(),
-		)
-	}
-	defer req.Body.Close()
-
-	timerGetContracts := timer("GetContracts()")
-
-	if contracts, err = GetContracts(req); err != nil {
 		if errors.Is(err, NoContentError) {
 			err = nil
 		} else {
 			t.Fatalf(
-				"%s Error from GetContracts() %s",
+				"%s Error from GetContracts()\n%s",
 				errPrefix,
 				err.Error(),
 			)
 		}
 	}
 
-	timerGetContracts()
-
 	if contracts == nil {
 		t.Fatalf(
 			"%s GetContracts() returned nil but no error.",
 			errPrefix,
 		)
+	}
+
+	for i, contract := range contracts {
+		if contract.ID == "" {
+			t.Fatalf(
+				"%s Contract with index %d has empty ID.",
+				errPrefix,
+				i,
+			)
+		}
+
+		fmt.Printf("Idx %d: ", i)
+
+		if contract.ID == "0" {
+			fmt.Println("No contract")
+		} else {
+			fmt.Printf("%v", contract)
+		}
 	}
 }

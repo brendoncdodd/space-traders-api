@@ -1,19 +1,13 @@
 package space_traders_api
 
 import (
-	"net/http"
-	"fmt"
-	"strings"
-	"strconv"
-	"bytes"
-	"io"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
 )
-
-type ContractPage struct {
-	Data []Contract
-	Meta map[string]int
-}
 
 type Contract struct {
 	ID            string
@@ -39,13 +33,17 @@ type Contract struct {
 }
 
 func (self Contract) String() string {
-	return fmt.Sprintf(
-		"\nContract\n"+
-			"\tID\t%s\n\tFaction\t%s\n\tType\t%s\n\tTerms\n"+
-			"\t\tDeadline\t%s\n\t\tPayment\n"+
-			"\t\t\tonAccepted\t%d\n\t\t\tonFulfilled\t%d\n"+
-			"\t\tDeliver\t%v\n"+
-			"\tAccepted\t%t\n\tFulfilled\t%t\n\tExpiration\t%s\n\tDeadlineToAccept\t%s\n",
+	ret := fmt.Sprintf(
+		"Contract Expires %s\n"+
+			"\t%s\n"+
+			"\t%s\n"+
+			"\tType\t%s\n"+
+			"\tTerms\n"+
+			"\t\tDeadline\t%s\n"+
+			"\t\tUp Front\t%dc\n"+
+			"\t\tFulfilled\t%dc\n"+
+			"\t\tDeliver\t%v\n",
+		self.Expiration,
 		self.ID,
 		self.FactionSymbol,
 		self.Type,
@@ -53,101 +51,92 @@ func (self Contract) String() string {
 		self.Terms.Payment.OnAccepted,
 		self.Terms.Payment.OnFulfilled,
 		self.Terms.Deliver,
-		self.Accepted,
-		self.Fulfilled,
-		self.Expiration,
-		self.DeadlineToAccept,
 	)
-}
 
+	if !self.Accepted {
+		ret += fmt.Sprintf(
+			"\tDeadlineToAccept\t%s\n",
+			self.DeadlineToAccept,
+		)
 
-func GetContracts(requestTemplate *http.Request) ([]Contract, error) {
-	const BUFFER_SIZE = 10000
-	error_prefix := "STAPI: Trying to get contracts."
-	responseBody := make([]byte, BUFFER_SIZE)
-	var contracts []Contract
-
-	if requestTemplate == nil {
-		if token_GET == nil {
-			return []Contract{}, fmt.Errorf(
-				"%s token_GET is nil",
-				error_prefix,
-			)
-		}
-		requestTemplate = token_GET
 	}
 
-	req := requestTemplate.Clone(requestTemplate.Context())
-	req.Body = io.NopCloser(strings.NewReader(""))
-	req.URL.Path = "/v2/my/contracts"
-	defer req.Body.Close()
+	if self.Fulfilled {
+		ret += fmt.Sprintf("\tFULFILLED")
+	}
 
-	currentPage := 1
+	return ret
+}
 
-	q := req.URL.Query()
-	q.Add("limit", "20")
-	req.URL.RawQuery = q.Encode()
+const BASE_URL = "https://api.spacetraders.io/v2"
 
-	for lastPage := false; !lastPage; {
-		page := new(ContractPage)
+func GetMyContracts(token string) ([]Contract, error) {
+	errPrefix := "STAPI: Trying to get contracts."
+	var contracts []Contract
+	respObject := new(struct {
+		Data  []Contract
+		Meta  map[string]int
+		Error *STJsonError
+	})
 
-		q = req.URL.Query()
-		if q.Has("page") {
-			q.Del("page")
-		}
-		q.Add("page", strconv.Itoa(currentPage))
+	req, err := http.NewRequest(
+		"GET",
+		BASE_URL+"/my/contracts",
+		io.NopCloser(strings.NewReader("")),
+	)
+	if err != nil {
+		return []Contract{}, fmt.Errorf(
+			"%s Creating request.\n%w",
+			errPrefix,
+			err,
+		)
+	}
+
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	for page := 1; respObject.Meta == nil || respObject.Meta["total"] > respObject.Meta["page"]*MAX_PAGE_LIMIT; page++ {
+		q := req.URL.Query()
+		q.Set("limit", strconv.Itoa(MAX_PAGE_LIMIT))
+		q.Set("page", strconv.Itoa(page))
 		req.URL.RawQuery = q.Encode()
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := SendRequest(req)
 		if err != nil {
 			return contracts, fmt.Errorf(
-				"%s Trying to send GET request: %s %w",
-				req.URL.String(),
-				error_prefix,
-				err,
-			)
-		}
-		defer resp.Body.Close()
-
-		bodySize, err := resp.Body.Read(responseBody)
-		responseBody = bytes.TrimRight(responseBody, "\x00")
-		if err != nil {
-			return contracts, fmt.Errorf(
-				"%s Trying to read response body. %w",
-				error_prefix,
-				err,
-			)
-		}
-		if bodySize >= BUFFER_SIZE {
-			return contracts, fmt.Errorf(
-				"%s Response body too big for buffer (%d bytes).",
-				error_prefix,
-				BUFFER_SIZE,
-			)
-		}
-
-		err = json.Unmarshal(responseBody, page)
-		if err != nil {
-			return contracts, fmt.Errorf(
-				"%s Unmarshalling JSON. %w",
-				error_prefix,
+				"%s Trying to send GET request for page %d.\n%w",
+				errPrefix,
+				page,
 				err,
 			)
 		}
 
-		currentPage++
-		if currentPage > page.Meta["total"] {
-			lastPage = true
+		err = json.Unmarshal(resp, respObject)
+		if err != nil {
+			return contracts, fmt.Errorf(
+				"%s Unmarshalling JSON.\n%w",
+				errPrefix,
+				err,
+			)
+		}
+		if respObject.Error != nil {
+			return contracts, fmt.Errorf(
+				"%s spacetraders.io error on page %d.\n%w",
+				errPrefix,
+				page,
+				respObject.Error,
+			)
 		}
 
-		contracts = append(contracts, page.Data...)
+		contracts = append(contracts, respObject.Data...)
+		req.Body.Close()
+		req.Body = io.NopCloser(strings.NewReader(""))
 	}
 
 	if contracts == nil {
 		contracts = []Contract{{ID: "0"}}
 		return contracts, fmt.Errorf(
 			"%s %w No contracts.",
-			error_prefix,
+			errPrefix,
 			NoContentError,
 		)
 	}
